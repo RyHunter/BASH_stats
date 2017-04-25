@@ -1,6 +1,6 @@
-#With help of my homeboy Collin the Grand Master Wizard of Bash Stuff
-
 #!/bin/bash
+
+#With help of my homeboy Collin the Grand Master Wizard of Bash Stuff
 trap "{ rm -f $DATA; exit 255; }" SIGINT SIGTERM SIGHUP
 
 #Some global variables
