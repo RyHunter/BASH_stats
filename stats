@@ -1,0 +1,104 @@
+#!/bin/bash
+trap "{ rm -f $DATA; exit 255; }" SIGINT SIGTERM SIGHUP
+
+#Some global variables
+OPTION=$1
+FILE=$2
+DATA=''
+FAILURE=1
+SUCCESS=0
+
+#Print out usage info
+#Redirect stdout to stderr
+usage()
+{
+        echo "$0 {-rows | -cols} [file]" >&2
+	exit $FAILURE
+}
+
+#Calculates average of selected values
+#FOR loop sums up all values 
+#OUTPUT is rounded to the nearest whole number
+mean ()
+{
+        count=0
+        total=0
+
+        for eachValue in $1 
+        do
+                ((count++)) 
+                ((total+=$eachValue))
+        done
+        printf "\n$(( ($total + $count - 1) / $count ))" | xargs -0 echo ""; 
+}
+
+#Calculates the median score
+#SORTED: takes a line and sorts small to large
+#MIDDLE: finds middle point in the list
+#OUTPUT: returns only the mid point 
+median ()
+{
+	count=0
+
+	sorted=$(for i in $1; 
+		do 
+			echo $i; 
+		done | sort -n)
+
+	for i in $1;
+	do
+		((count++))
+	done
+	
+	middle=$((1+count/2))
+	printf "$sorted"| cut -d $'\n' -f "$middle"
+}
+
+#Checks that there is the appropriate number of arguments
+#Checks that argument 1 starts with an "r" or a "c"
+[[ $# -gt 2 ]] || !( [[ "$OPTION" == -r* ]] || [[ "$OPTION" == -c* ]] ) && usage
+( [[ -n "$FILE" ]] && ! [[ -r "$FILE" ]] ) && echo "cannot read $FILE " >&2 && exit $FAILURE
+
+#Checks if a file or stdin is provided
+#Fills DATA variable with input
+if [ -r "$FILE" ]
+then
+        DATA="$(<"$FILE")"
+else
+	while read line
+	do
+		DATA+=$line
+		DATA+=$'\n'
+	done	
+fi
+
+#Outputs mean/median calculation by row
+if [[ "$OPTION" == -r* ]]
+then
+	printf "Mean\tMedian"
+
+	while read line
+        do
+		printf "$(mean "$line")\t$(median "$line")"
+
+        done<<<"$DATA"
+
+        printf "$list_means\t$list_medians\n"
+fi
+
+#Outputs mean/median calculation by column
+if [[ "$OPTION" == -c* ]]
+then
+	numColumns=$(echo "$DATA" | head -1 | wc -w)
+	column=1
+
+	until [ "$column" -gt "$numColumns" ]
+	do
+		printf "column $column mean and median"
+		mean "$(echo "$DATA" | cut -d" " -f$column | tr '\t' '\n' )"
+		median "$(echo "$DATA" | cut -d" " -f$column | tr '\t' ' ')"
+		((column++))
+	done
+fi
+
+
