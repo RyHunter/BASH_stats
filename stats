@@ -1,3 +1,5 @@
+#With help of my homeboy Collin the Grand Master Wizard of Bash Stuff
+
 #!/bin/bash
 trap "{ rm -f $DATA; exit 255; }" SIGINT SIGTERM SIGHUP
 
